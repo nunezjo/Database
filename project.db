@@ -1,0 +1,262 @@
+DROP TABLE Employee CASCADE CONSTRAINTS;
+DROP TABLE Customer CASCADE CONSTRAINTS;
+DROP TABLE Purchase CASCADE CONSTRAINTS;
+DROP TABLE RepairService CASCADE CONSTRAINTS;
+DROP TABLE sType CASCADE CONSTRAINTS;
+DROP TABLE OrderNumber CASCADE CONSTRAINTS;
+
+
+SPOOL project.txt
+SET ECHO ON
+set sqlblanklines on
+/*
+CIS 353 - Database Design Project
+<One line per team member name; in alphabetical order>
+Brenden York
+Hunter Chopp
+Josue Nunez
+Kevin Rufino
+*/
+
+--< The SQL/DDL code that creates your schema >
+
+CREATE TABLE Employee(
+eID INTEGER,
+eName CHAR(15),
+eLevel INTEGER,
+
+CONSTRAINT eIC1 PRIMARY KEY (eID),
+CONSTRAINT eIC2 CHECK (eLevel >=0 AND eLevel <2)
+);
+
+
+CREATE TABLE Customer(
+cID INTEGER,
+cName CHAR(15),
+cPNumber INTEGER,
+
+CONSTRAINT cIC1 PRIMARY KEY (cID)
+);
+
+CREATE TABLE RepairService(
+rID INTEGER,
+cID INTEGER,
+eID INTEGER,
+rQuantity INTEGER,
+
+CONSTRAINT rsIC1 PRIMARY KEY (rID),
+CONSTRAINT rsIC2 FOREIGN KEY (cID) REFERENCES Customer(cID)
+    ON DELETE CASCADE
+    DEFERRABLE INITIALLY DEFERRED,
+CONSTRAINT rsIC3 FOREIGN KEY (eID) REFERENCES Employee(eID)
+    ON DELETE CASCADE
+    DEFERRABLE INITIALLY DEFERRED
+
+);
+
+CREATE TABLE Purchase(
+pID INTEGER,
+rID INTEGER,
+Cost INTEGER,
+cName CHAR(15),
+
+
+
+
+CONSTRAINT pIC1 PRIMARY KEY (pID),
+CONSTRAINT pIC2 FOREIGN KEY (rID) REFERENCES RepairService(rID)
+    ON DELETE CASCADE
+    DEFERRABLE INITIALLY DEFERRED
+);
+
+
+
+CREATE TABLE sType(
+rID INTEGER,
+sType char(25),
+
+CONSTRAINT sIC1 PRIMARY KEY (rID),
+CONSTRAINT sIC2 FOREIGN KEY (rID) REFERENCES RepairService(rID)
+    ON DELETE CASCADE
+    DEFERRABLE INITIALLY DEFERRED,
+CONSTRAINT sIC3 CHECK (sType IN ('phone','desktop', 'laptop'))
+);
+
+
+CREATE TABLE OrderNumber(
+rNum INTEGER,
+pID INTEGER,
+
+CONSTRAINT oIC1 PRIMARY KEY (rNum, pID),
+CONSTRAINT oIC2 FOREIGN KEY (pID) REFERENCES Purchase(pID)
+    ON DELETE CASCADE
+    DEFERRABLE INITIALLY DEFERRED
+
+);
+
+--In the DDL, every IC must have a unique name; e.g. IC5, IC10, IC15, etc.
+--
+SET FEEDBACK OFF
+/*< The INSERT statements that populate the tables>
+Important: Keep the number of rows in each table small enough so that the results of your
+queries can be verified by hand. See the Sailors database as an example.*/
+
+--(eID, eName, eLevel)
+INSERT INTO Employee VALUES (101283, 'Charlie', 0);
+INSERT INTO Employee VALUES (101253, 'Kevin', 1);
+INSERT INTO Employee VALUES (101123, 'Hunter', 1);
+INSERT INTO Employee VALUES (123213, 'Josue', 1);
+INSERT INTO Employee VALUES (238302, 'Brenden', 1);
+INSERT INTO Employee VALUES (248712, 'Chris', 0);
+INSERT INTO Employee VALUES (590302, 'Maria', 0);
+INSERT INTO Employee VALUES (187948, 'Max', 0);
+
+--(cID, cName, cPNumber )
+INSERT INTO Customer VALUES (1000, 'Jacob', 6162637728);
+INSERT INTO Customer VALUES (1001, 'Ashley', 6162309945);
+INSERT INTO Customer VALUES (1002, 'Christian', 2837919873);
+INSERT INTO Customer VALUES (1003, 'Naruto', 2139871297);
+INSERT INTO Customer VALUES (1004, 'Barack', 2398432948);
+INSERT INTO Customer VALUES (1005, 'Joe', 1238749898);
+INSERT INTO Customer VALUES (1006, 'Donald', 3139081284);
+INSERT INTO Customer VALUES (1007, 'Mike', 4239874957);
+
+--(pID, cost, cName)
+INSERT INTO Purchase VALUES (1234567, 238473, 200, 'Jacob');
+INSERT INTO Purchase VALUES (1234568, 287493, 800, 'Ashley');
+INSERT INTO Purchase VALUES (1234558, 247293, 400, 'Christian');
+INSERT INTO Purchase VALUES (1234569, 569456, 400, 'Naruto');
+INSERT INTO Purchase VALUES (1234570, 435793, 200, 'Barack');
+INSERT INTO Purchase VALUES (1234571,329752, 600, 'Joe');
+INSERT INTO Purchase VALUES (1234572,595874, 600, 'Donald');
+INSERT INTO Purchase VALUES (1234573,235288, 200, 'Mike');
+
+--(rID, cID, eID, rQuantity)
+INSERT INTO RepairService VALUES (238473, 1000, 238302, 1);
+INSERT INTO RepairService VALUES (287493, 1001, 238302, 4);
+INSERT INTO RepairService VALUES (247293, 1002, 238302, 2);
+INSERT INTO RepairService VALUES (569456, 1003, 101123, 2);
+INSERT INTO RepairService VALUES (435793, 1004, 101123, 1);
+INSERT INTO RepairService VALUES (329752, 1005, 101253, 3);
+INSERT INTO RepairService VALUES (595874, 1006, 123213, 3);
+INSERT INTO RepairService VALUES (235288, 1007, 101253, 1);
+
+--(rID, sType)
+INSERT INTO sType VALUES (238473, 'phone');
+INSERT INTO sType VALUES (287493, 'desktop');
+INSERT INTO sType VALUES (247293, 'phone');
+INSERT INTO sType VALUES (569456, 'phone');
+INSERT INTO sType VALUES (435793, 'laptop');
+INSERT INTO sType VALUES (329752, 'desktop');
+INSERT INTO sType VALUES (595874, 'laptop');
+INSERT INTO sType VALUES (235288, 'desktop');
+--
+
+SET FEEDBACK ON
+COMMIT;
+
+
+
+
+--
+/*< One query (per table) of the form: SELECT * FROM table; in order to display your database >*/
+SELECT * FROM Employee;
+SELECT * FROM Customer;
+SELECT * FROM Purchase;
+SELECT * FROM RepairService;
+SELECT * FROM sType;
+SELECT * FROM OrderNumber;
+--
+/*< The SQL queries>. Include the following for each query:
+− A comment line stating the query number and the feature(s) it demonstrates
+(e.g. -- Q25 – correlated subquery).
+− A comment line stating the query in English.
+− The SQL code for the query.
+*/
+--
+--Q1- get cName and eName for every purchase with a rQuantity of 2
+SELECT Purchase.pID, Customer.cName, Employee.eName, RepairService.rQuantity 
+FROM RepairService
+JOIN Purchase ON RepairService.rID = Purchase.rID
+JOIN Customer ON RepairService.cID = Customer.cID
+JOIN Employee ON RepairService.eID = Employee.eID
+WHERE RepairService.rQuantity = 2;
+
+--Q2-  Self join Query
+SELECT E1.eID, E2.eID
+FROM Employees E1, Employees E2
+WHERE E1.eLevel > 0 AND
+ E1.eLevel = E2.eLevel AND
+ E1.eID < E2.eID;
+    
+--Q3-   Union, Intersect, or Minus- Find all Repair Services ID�s  with a cost greater than or equal to 400$ and Quantity greater than 1.
+
+SELECT  P.rID
+FROM Purchase P
+WHERE (P.cost >= 400)
+UNION
+SELECT RS.rID 
+FROM RepairService RS
+WHERE (RS.rQuantity >1);
+
+
+
+--Q4, Q5-
+
+SELECT E.eID, E.eName, SUM (R.rQuantity), count (*)
+FROM Employee E, RepairService R
+WHERE E.eName = 'Brenden' AND
+E.eID = R.eID
+GROUP BY E.eID, E.eName
+HAVING COUNT(*) >= 1
+ORDER BY E.eName;
+
+--Q6-   A Correlated Subquery- The correlated subquery calculates total sales for each employee from the RepairService table. The selected EmployeeID from the outer query is passed to the correlated subquery for getting the corresponding sales data.*/
+
+SELECT RS.eID,
+(SELECT 
+ SUM(P.Cost )
+FROM Purchase P
+WHERE 
+RS.rID = P.rID) AS total 
+FROM 
+RepairService RS
+ORDER BY total DESC;
+
+--Q7- Find every employee with an eLevel under 3 that does not work on a repair service
+SELECT E.eID, E.eName
+FROM Employee E 
+WHERE E.eLevel < 3 AND
+ E.eID NOT IN (SELECT
+ R.eID
+ FROM RepairService R);
+
+--Q8- Every employee who repaired a phone
+SELECT DISTINCT R.eID
+FROM RepairService R
+WHERE NOT EXISTS
+    (SELECT S.rID
+    FROM sType S
+    WHERE S.sType = 'phone'
+    MINUS
+    SELECT R.rID
+    FROM RepairService R, sType S
+    WHERE R.rID = S.rID);
+
+--Q9- 
+SELECT E.eID, E.eName, R.rID
+FROM Employee E LEFT OUTER JOIN RepairService R on R.eID = E.eID;
+
+
+/*< The insert/delete/update statements to test the enforcement of ICs >
+Include the following items for every IC that you test (Important: see the next section titled
+“Submit a final report” regarding which ICs you need to test).
+− A comment line stating: Testing: < IC name>
+− A SQL INSERT, DELETE, or UPDATE that will test the IC.
+*/
+COMMIT;
+--
+SPOOL OFF
+
+
+
